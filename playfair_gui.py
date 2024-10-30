@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit
 import sys
 import unicodedata
+import PySide6.QtWidgets as qtw
 
 config = {
     "key": "keynzu",
@@ -16,7 +16,8 @@ def format_text(input_text: str) -> str:
     ]
 
     for i in range(len(formatted_text)):
-        if formatted_text[i].isspace() or formatted_text[i].isnumeric():
+        #if formatted_text[i].isspace() or formatted_text[i].isnumeric():
+        if not formatted_text[i].isalpha():
             formatted_text[i] = ('x' + unicodedata.name(formatted_text[i]).replace(' ', '') + 'x').lower()
 
     formatted_text = [
@@ -56,6 +57,7 @@ def character_position(matrix: list, character: str) -> tuple:
 def encrypt(key: str, alphabet: str, input_text: str) -> str:
     matrix = create_key_matrix(key, alphabet)
     formatted_text = format_text(input_text)
+    print(formatted_text)
     encrypted_text = []
 
     for i in range(0, len(formatted_text), 2):
@@ -72,11 +74,20 @@ def encrypt(key: str, alphabet: str, input_text: str) -> str:
 
 def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
     matrix = create_key_matrix(key, alphabet)
+    # formatted_text = format_text(encrypted_text)
+    formatted_text = encrypted_text
+    if len(formatted_text) % 2 != 0:
+        sub_char = config["substitution_characters"][0]
+        if formatted_text[-1] == sub_char:
+            sub_char = config["substitution_characters"][1]
+        formatted_text.append(sub_char)
+
+    print(formatted_text)
     decrypted_text = []
 
-    for i in range(0, len(encrypted_text), 2):
-        char_a = character_position(matrix, encrypted_text[i])
-        char_b = character_position(matrix, encrypted_text[i + 1])
+    for i in range(0, len(formatted_text), 2):
+        char_a = character_position(matrix, formatted_text[i])
+        char_b = character_position(matrix, formatted_text[i + 1])
         if char_a[0] == char_b[0]:
             decrypted_text.append(matrix[char_a[0]][(char_a[1] - 1) % 5] + matrix[char_b[0]][(char_b[1] - 1) % 5])
         elif char_a[1] == char_b[1]:
@@ -86,62 +97,55 @@ def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
 
     return ''.join(decrypted_text)
 
-class CipherApp(QMainWindow):
+class CipherApp(qtw.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Playfair Cipher GUI")
+        self.setWindowTitle("playfair")
         self.setGeometry(200, 200, 600, 400)
-
-        self.central_widget = QWidget()
+        self.central_widget = qtw.QWidget()
         self.setCentralWidget(self.central_widget)
-        
-        self.layout = QVBoxLayout()
+        self.layout = qtw.QVBoxLayout()
         self.central_widget.setLayout(self.layout)
+
+        self.key_label = qtw.QLabel("key")
+        self.layout.addWidget(self.key_label)
+        self.key_text = qtw.QLineEdit()
+        self.layout.addWidget(self.key_text)
         
-        self.input_label = QLabel("Input Text:")
+        self.input_label = qtw.QLabel("input")
         self.layout.addWidget(self.input_label)
-        
-        self.input_text = QLineEdit()
+        self.input_text = qtw.QTextEdit()
         self.layout.addWidget(self.input_text)
+
+        self.output_label = qtw.QLabel("output")
+        self.layout.addWidget(self.output_label)
+        self.output_text = qtw.QTextEdit()
+        self.output_text.setReadOnly(True)
+        self.layout.addWidget(self.output_text)
         
-        self.encrypted_label = QLabel("Encrypted Text:")
-        self.layout.addWidget(self.encrypted_label)
+        self.button_layout = qtw.QHBoxLayout()
         
-        self.encrypted_text = QTextEdit()
-        self.encrypted_text.setReadOnly(True)
-        self.layout.addWidget(self.encrypted_text)
-        
-        self.decrypted_label = QLabel("Decrypted Text:")
-        self.layout.addWidget(self.decrypted_label)
-        
-        self.decrypted_text = QTextEdit()
-        self.decrypted_text.setReadOnly(True)
-        self.layout.addWidget(self.decrypted_text)
-        
-        self.button_layout = QHBoxLayout()
-        
-        self.encrypt_button = QPushButton("Encrypt")
+        self.encrypt_button = qtw.QPushButton("encrypt")
         self.encrypt_button.clicked.connect(self.handle_encrypt)
         self.button_layout.addWidget(self.encrypt_button)
         
-        self.decrypt_button = QPushButton("Decrypt")
+        self.decrypt_button = qtw.QPushButton("decrypt")
         self.decrypt_button.clicked.connect(self.handle_decrypt)
         self.button_layout.addWidget(self.decrypt_button)
         
         self.layout.addLayout(self.button_layout)
 
     def handle_encrypt(self):
-        open_text = self.input_text.text()
-        encrypted_text = encrypt(config["key"], config["alphabet"], open_text)
-        self.encrypted_text.setText(encrypted_text)
+        print(self.key_text.text())
+        encrypted_text = encrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
+        self.output_text.setText(encrypted_text)
 
     def handle_decrypt(self):
-        encrypted_text = self.encrypted_text.toPlainText()
-        decrypted_text = decrypt(config["key"], config["alphabet"], encrypted_text)
-        self.decrypted_text.setText(decrypted_text)
+        print(self.key_text.text())
+        decrypted_text = decrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
+        self.output_text.setText(decrypted_text)
 
-app = QApplication(sys.argv)
+app = qtw.QApplication(sys.argv)
 window = CipherApp()
 window.show()
 sys.exit(app.exec_())
-
