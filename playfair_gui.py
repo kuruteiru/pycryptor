@@ -1,6 +1,7 @@
 import sys
 import unicodedata
 import PySide6.QtWidgets as qtw
+import PySide6.QtCore as qtc
 
 config = {
     "key": "keynzu",
@@ -8,6 +9,12 @@ config = {
     "substitution_characters": ('x', 'q'),
     "replaced_characters": ('j', 'i')
 }
+
+def main():
+    app = qtw.QApplication(sys.argv)
+    window = CipherApp()
+    window.show()
+    sys.exit(app.exec_())
 
 def format_text(input_text: str) -> str:
     formatted_text = [
@@ -57,7 +64,6 @@ def character_position(matrix: list, character: str) -> tuple:
 def encrypt(key: str, alphabet: str, input_text: str) -> str:
     matrix = create_key_matrix(key, alphabet)
     formatted_text = format_text(input_text)
-    print(formatted_text)
     encrypted_text = []
 
     for i in range(0, len(formatted_text), 2):
@@ -74,15 +80,14 @@ def encrypt(key: str, alphabet: str, input_text: str) -> str:
 
 def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
     matrix = create_key_matrix(key, alphabet)
-    # formatted_text = format_text(encrypted_text)
-    formatted_text = encrypted_text
+    formatted_text = format_text(encrypted_text)
+    # formatted_text = encrypted_text
     if len(formatted_text) % 2 != 0:
         sub_char = config["substitution_characters"][0]
         if formatted_text[-1] == sub_char:
             sub_char = config["substitution_characters"][1]
         formatted_text.append(sub_char)
 
-    print(formatted_text)
     decrypted_text = []
 
     for i in range(0, len(formatted_text), 2):
@@ -111,18 +116,36 @@ class CipherApp(qtw.QMainWindow):
         self.layout.addWidget(self.key_label)
         self.key_text = qtw.QLineEdit()
         self.layout.addWidget(self.key_text)
-        
+
+        self.key_matrix_table = qtw.QTableWidget(5, 5)
+        self.key_matrix_table.setFixedSize(150, 150)
+        self.key_matrix_table.setEditTriggers(qtw.QTableWidget.NoEditTriggers)
+        self.key_matrix_table.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
+        self.key_matrix_table.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
+        self.key_matrix_table.horizontalHeader().setVisible(False)
+        self.key_matrix_table.verticalHeader().setVisible(False)
+
+        for i in range(5):
+            self.key_matrix_table.setColumnWidth(i, 30)
+            self.key_matrix_table.setRowHeight(i, 30)
+
         self.input_label = qtw.QLabel("input")
         self.layout.addWidget(self.input_label)
         self.input_text = qtw.QTextEdit()
         self.layout.addWidget(self.input_text)
 
+        self.v_box_layout = qtw.QHBoxLayout()
+
         self.output_label = qtw.QLabel("output")
         self.layout.addWidget(self.output_label)
         self.output_text = qtw.QTextEdit()
         self.output_text.setReadOnly(True)
-        self.layout.addWidget(self.output_text)
+        self.v_box_layout.addWidget(self.output_text)
         
+        self.v_box_layout.addWidget(self.key_matrix_table)
+        self.layout.addLayout(self.v_box_layout)
+        self.update_key_matrix() 
+
         self.button_layout = qtw.QHBoxLayout()
         
         self.encrypt_button = qtw.QPushButton("encrypt")
@@ -135,17 +158,23 @@ class CipherApp(qtw.QMainWindow):
         
         self.layout.addLayout(self.button_layout)
 
+    def update_key_matrix(self):
+        matrix = create_key_matrix(self.key_text.text(), config["alphabet"])
+        
+        for i in range(5):
+            for j in range(5):
+                item = qtw.QTableWidgetItem(matrix[i][j])
+                item.setTextAlignment(qtc.Qt.AlignCenter)
+                self.key_matrix_table.setItem(i, j, item)
+
     def handle_encrypt(self):
-        print(self.key_text.text())
+        self.update_key_matrix()
         encrypted_text = encrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
         self.output_text.setText(encrypted_text)
 
     def handle_decrypt(self):
-        print(self.key_text.text())
+        self.update_key_matrix()
         decrypted_text = decrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
         self.output_text.setText(decrypted_text)
 
-app = qtw.QApplication(sys.argv)
-window = CipherApp()
-window.show()
-sys.exit(app.exec_())
+if __name__ == "__main__": main()
