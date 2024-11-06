@@ -4,7 +4,6 @@ import PySide6.QtWidgets as qtw
 import PySide6.QtCore as qtc
 
 config = {
-    "key": "keynzu",
     "alphabet": "abcdefghijklmnopqrstuvwxyz",
     "substitution_characters": ('x', 'q'),
     "replaced_characters": ('j', 'i')
@@ -14,17 +13,23 @@ def main():
     app = qtw.QApplication(sys.argv)
     window = CipherApp()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 def format_text(input_text: str) -> str:
     formatted_text = [
         c.lower() for c in input_text
-        if c.isalnum() or c.isspace()
+        if c.isalpha() or c.isspace()
     ]
 
+    formatted_text = [
+        c for i, c in enumerate(formatted_text)
+        if c != ' ' or (i == 0 or formatted_text[i - 1] != ' ')
+    ]
+
+    print(formatted_text)
+
     for i in range(len(formatted_text)):
-        #if formatted_text[i].isspace() or formatted_text[i].isnumeric():
-        if not formatted_text[i].isalpha():
+        if formatted_text[i].isspace():
             formatted_text[i] = ('x' + unicodedata.name(formatted_text[i]).replace(' ', '') + 'x').lower()
 
     formatted_text = [
@@ -80,8 +85,7 @@ def encrypt(key: str, alphabet: str, input_text: str) -> str:
 
 def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
     matrix = create_key_matrix(key, alphabet)
-    formatted_text = format_text(encrypted_text)
-    # formatted_text = encrypted_text
+    formatted_text = encrypted_text
     if len(formatted_text) % 2 != 0:
         sub_char = config["substitution_characters"][0]
         if formatted_text[-1] == sub_char:
@@ -100,7 +104,8 @@ def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
         else:
             decrypted_text.append(matrix[char_a[0]][char_b[1]] + matrix[char_b[0]][char_a[1]])
 
-    return ''.join(decrypted_text)
+    space = 'x' + unicodedata.name(' ') + 'x'
+    return ''.join(decrypted_text).replace(space.lower(), ' ')
 
 class CipherApp(qtw.QMainWindow):
     def __init__(self):
