@@ -26,8 +26,6 @@ def format_text(input_text: str) -> str:
         if c != ' ' or (i == 0 or formatted_text[i - 1] != ' ')
     ]
 
-    print(formatted_text)
-
     for i in range(len(formatted_text)):
         if formatted_text[i].isspace():
             formatted_text[i] = ('x' + unicodedata.name(formatted_text[i]).replace(' ', '') + 'x').lower()
@@ -85,7 +83,7 @@ def encrypt(key: str, alphabet: str, input_text: str) -> str:
 
 def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
     matrix = create_key_matrix(key, alphabet)
-    formatted_text = encrypted_text
+    formatted_text = encrypted_text.lower()
     if len(formatted_text) % 2 != 0:
         sub_char = config["substitution_characters"][0]
         if formatted_text[-1] == sub_char:
@@ -139,6 +137,12 @@ class CipherApp(qtw.QMainWindow):
         self.input_text = qtw.QTextEdit()
         self.layout.addWidget(self.input_text)
 
+        self.formatted_input_label = qtw.QLabel("formatted input")
+        self.layout.addWidget(self.formatted_input_label)
+        self.formatted_input_text = qtw.QTextEdit()
+        self.formatted_input_text.setReadOnly(True)
+        self.layout.addWidget(self.formatted_input_text)
+
         self.v_box_layout = qtw.QHBoxLayout()
 
         self.output_label = qtw.QLabel("output")
@@ -175,11 +179,27 @@ class CipherApp(qtw.QMainWindow):
     def handle_encrypt(self):
         self.update_key_matrix()
         encrypted_text = encrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
-        self.output_text.setText(encrypted_text)
+        self.output_text.setText(encrypted_text.upper())
+        formatted_input = format_text(self.input_text.toPlainText()).upper()
+        formatted_input = ''.join([
+                c if i == 0 or i % 2 != 0
+                else f' {c}'
+                for i, c in enumerate(formatted_input)
+        ])
+        self.formatted_input_text.setText(formatted_input)
 
     def handle_decrypt(self):
         self.update_key_matrix()
         decrypted_text = decrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
-        self.output_text.setText(decrypted_text)
+        self.output_text.setText(decrypted_text.upper())
+        formatted_input = format_text(self.input_text.toPlainText()).upper()
+        self.formatted_input_text.setText(formatted_input)
+        formatted_input = self.input_text.toPlainText().upper()
+        formatted_input = ''.join([
+                c if i == 0 or i % 2 != 0
+                else f' {c}'
+                for i, c in enumerate(formatted_input)
+        ])
+        self.formatted_input_text.setText(formatted_input)
 
 if __name__ == "__main__": main()
