@@ -54,6 +54,7 @@ def format_text(input_text: str) -> str:
 
 def create_key_matrix(key: str, alphabet: str) -> list:
     key = key.lower().replace('j', 'i')
+    key = ''.join([c for c in unicodedata.normalize('NFD', key) if c.isalpha() and unicodedata.category(c) != 'Mn'])
     key = sorted(set(key), key=lambda x: key.index(x))
     key += ''.join([x for x in alphabet.replace('j', '') if x not in key])
     return [list(key[i:i + 5]) for i in range(0, 25, 5)]
@@ -179,6 +180,11 @@ class CipherApp(qtw.QMainWindow):
     def handle_encrypt(self):
         self.update_key_matrix()
         encrypted_text = encrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
+        encrypted_text = ''.join([
+                c if i == 0 or i % 5 != 0
+                else f' {c}'
+                for i, c in enumerate(encrypted_text)
+        ])
         self.output_text.setText(encrypted_text.upper())
         formatted_input = format_text(self.input_text.toPlainText()).upper()
         formatted_input = ''.join([
@@ -191,6 +197,11 @@ class CipherApp(qtw.QMainWindow):
     def handle_decrypt(self):
         self.update_key_matrix()
         decrypted_text = decrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
+        decrypted_text = ''.join([
+                c if i == 0 or i % 5 != 0
+                else f' {c}'
+                for i, c in enumerate(decrypted_text)
+        ])
         self.output_text.setText(decrypted_text.upper())
         formatted_input = format_text(self.input_text.toPlainText()).upper()
         self.formatted_input_text.setText(formatted_input)
