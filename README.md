@@ -1,4 +1,4 @@
-# how to run
+# how to run a program
 
 ```
 $ python -m venv .venv
