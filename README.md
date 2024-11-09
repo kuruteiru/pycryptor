@@ -1,6 +1,4 @@
-# cryptology
-
-## how to run the program
+# how to run
 
 ```
 $ python -m venv .venv
