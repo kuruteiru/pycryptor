@@ -6,7 +6,7 @@ $ python -m venv .venv
 // linux or macos
 $ source .venv/bin/activate 
 
-//windows
+// windows
 $ .venv\Scripts\activate.bat
 
 (.venv) $ pip install -r requirements.txt
