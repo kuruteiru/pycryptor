@@ -1,4 +1,16 @@
 # cryptology
-### todo: 
-- fix error when trying do decrypt string with odd number of characters
-- add instruction on how to run the program into readme
+
+## how to run the program
+
+```
+$ python -m venv .venv
+
+// linux or macos
+$ source .venv/bin/activate 
+
+//windows
+$ .venv\Scripts\activate.bat
+
+(.venv) $ pip install -r requirements.txt
+(.venv) $ python <cipher>.py
+```
