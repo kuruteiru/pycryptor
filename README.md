@@ -1,4 +1,4 @@
-# how to run a program
+# run pycryptor
 
 ```
 $ python -m venv .venv
@@ -10,5 +10,5 @@ $ source .venv/bin/activate
 $ .venv\Scripts\activate.bat
 
 (.venv) $ pip install -r requirements.txt
-(.venv) $ python <cipher>.py
+(.venv) $ python pycryptor.py
 ```
