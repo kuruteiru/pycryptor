@@ -11,7 +11,7 @@ config = {
 
 def main():
     app = qtw.QApplication(sys.argv)
-    window = CipherApp()
+    window = App()
     window.show()
     sys.exit(app.exec())
 
@@ -106,7 +106,7 @@ def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
     space = 'x' + unicodedata.name(' ') + 'x'
     return ''.join(decrypted_text).replace(space.lower(), ' ')
 
-class CipherApp(qtw.QMainWindow):
+class App(qtw.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("playfair")
