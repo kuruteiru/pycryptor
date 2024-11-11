@@ -10,6 +10,7 @@ config = {
 }
 
 def main():
+    print("adfgvx")
     app = qtw.QApplication(sys.argv)
     window = App()
     window.show()
@@ -52,12 +53,12 @@ def format_text(input_text: str) -> str:
 
     return ''.join(formatted_text)
 
-def create_key_matrix(key: str, alphabet: str) -> list:
+def create_key_matrix(key: str, alphabet: str) -> list[list[str]]:
     key = key.lower().replace('j', 'i')
-    key = ''.join([c for c in unicodedata.normalize('NFD', key) if c.isalpha() and unicodedata.category(c) != 'Mn'])
-    key = sorted(set(key), key=lambda x: key.index(x))
-    key += ''.join([x for x in alphabet.replace('j', '') if x not in key])
-    return [list(key[i:i + 5]) for i in range(0, 25, 5)]
+    key_matrix = [c for c in unicodedata.normalize('NFD', key) if c.isalpha() and unicodedata.category(c) != 'Mn']
+    key_matrix = sorted(set(key_matrix), key = lambda x: key_matrix.index(x))
+    key_matrix += [x for x in alphabet.replace('j', '') if x not in key_matrix]
+    return [key_matrix[i:i+5] for i in range(0, 25, 5)]
 
 def character_position(matrix: list, character: str) -> tuple:
     if character == 'j': character = 'i'
@@ -85,13 +86,13 @@ def encrypt(key: str, alphabet: str, input_text: str) -> str:
 def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
     matrix = create_key_matrix(key, alphabet)
     formatted_text = encrypted_text.lower()
+    decrypted_text = []
+
     if len(formatted_text) % 2 != 0:
         sub_char = config["substitution_characters"][0]
         if formatted_text[-1] == sub_char:
             sub_char = config["substitution_characters"][1]
-        formatted_text.append(sub_char)
-
-    decrypted_text = []
+        formatted_text += sub_char
 
     for i in range(0, len(formatted_text), 2):
         char_a = character_position(matrix, formatted_text[i])
@@ -113,19 +114,19 @@ class App(qtw.QMainWindow):
         self.setGeometry(200, 200, 600, 400)
         self.central_widget = qtw.QWidget()
         self.setCentralWidget(self.central_widget)
-        self.layout = qtw.QVBoxLayout()
-        self.central_widget.setLayout(self.layout)
+        self.mainLayout = qtw.QVBoxLayout()
+        self.central_widget.setLayout(self.mainLayout)
 
         self.key_label = qtw.QLabel("key")
-        self.layout.addWidget(self.key_label)
+        self.mainLayout.addWidget(self.key_label)
         self.key_text = qtw.QLineEdit()
-        self.layout.addWidget(self.key_text)
+        self.mainLayout.addWidget(self.key_text)
 
         self.key_matrix_table = qtw.QTableWidget(5, 5)
-        self.key_matrix_table.setFixedSize(150, 150)
-        self.key_matrix_table.setEditTriggers(qtw.QTableWidget.NoEditTriggers)
-        self.key_matrix_table.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
-        self.key_matrix_table.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
+        self.key_matrix_table.setFixedSize(190, 150)
+        self.key_matrix_table.setEditTriggers(qtw.QTableWidget.EditTrigger.NoEditTriggers)
+        self.key_matrix_table.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.key_matrix_table.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.key_matrix_table.horizontalHeader().setVisible(False)
         self.key_matrix_table.verticalHeader().setVisible(False)
 
@@ -134,26 +135,25 @@ class App(qtw.QMainWindow):
             self.key_matrix_table.setRowHeight(i, 30)
 
         self.input_label = qtw.QLabel("input")
-        self.layout.addWidget(self.input_label)
+        self.mainLayout.addWidget(self.input_label)
         self.input_text = qtw.QTextEdit()
-        self.layout.addWidget(self.input_text)
+        self.mainLayout.addWidget(self.input_text)
 
         self.formatted_input_label = qtw.QLabel("formatted input")
-        self.layout.addWidget(self.formatted_input_label)
+        self.mainLayout.addWidget(self.formatted_input_label)
         self.formatted_input_text = qtw.QTextEdit()
         self.formatted_input_text.setReadOnly(True)
-        self.layout.addWidget(self.formatted_input_text)
+        self.mainLayout.addWidget(self.formatted_input_text)
 
         self.v_box_layout = qtw.QHBoxLayout()
 
         self.output_label = qtw.QLabel("output")
-        self.layout.addWidget(self.output_label)
+        self.mainLayout.addWidget(self.output_label)
         self.output_text = qtw.QTextEdit()
         self.output_text.setReadOnly(True)
         self.v_box_layout.addWidget(self.output_text)
-        
         self.v_box_layout.addWidget(self.key_matrix_table)
-        self.layout.addLayout(self.v_box_layout)
+        self.mainLayout.addLayout(self.v_box_layout)
         self.update_key_matrix() 
 
         self.button_layout = qtw.QHBoxLayout()
@@ -166,7 +166,7 @@ class App(qtw.QMainWindow):
         self.decrypt_button.clicked.connect(self.handle_decrypt)
         self.button_layout.addWidget(self.decrypt_button)
         
-        self.layout.addLayout(self.button_layout)
+        self.mainLayout.addLayout(self.button_layout)
 
     def update_key_matrix(self):
         matrix = create_key_matrix(self.key_text.text(), config["alphabet"])
@@ -174,17 +174,12 @@ class App(qtw.QMainWindow):
         for i in range(5):
             for j in range(5):
                 item = qtw.QTableWidgetItem(matrix[i][j])
-                item.setTextAlignment(qtc.Qt.AlignCenter)
+                item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
                 self.key_matrix_table.setItem(i, j, item)
 
     def handle_encrypt(self):
         self.update_key_matrix()
         encrypted_text = encrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
-        encrypted_text = ''.join([
-                c if i == 0 or i % 5 != 0
-                else f' {c}'
-                for i, c in enumerate(encrypted_text)
-        ])
         self.output_text.setText(encrypted_text.upper())
         formatted_input = format_text(self.input_text.toPlainText()).upper()
         formatted_input = ''.join([
@@ -197,11 +192,6 @@ class App(qtw.QMainWindow):
     def handle_decrypt(self):
         self.update_key_matrix()
         decrypted_text = decrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
-        decrypted_text = ''.join([
-                c if i == 0 or i % 5 != 0
-                else f' {c}'
-                for i, c in enumerate(decrypted_text)
-        ])
         self.output_text.setText(decrypted_text.upper())
         formatted_input = format_text(self.input_text.toPlainText()).upper()
         self.formatted_input_text.setText(formatted_input)
