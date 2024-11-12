@@ -60,10 +60,10 @@ def create_key_matrix(key: str, alphabet: str) -> list[list[str]]:
     key_matrix += [x for x in alphabet.replace('j', '') if x not in key_matrix]
     return [key_matrix[i:i+5] for i in range(0, 25, 5)]
 
-def character_position(matrix: list, character: str) -> tuple:
-    if character == 'j': character = 'i'
+def get_coordinates(matrix: list[list[str]], char: str) -> tuple[int, int]:
+    if char == 'j': char = 'i'
     for i, row in enumerate(matrix):
-        if character in row: return (i, row.index(character))
+        if char in row: return (i, row.index(char))
     return (-1, -1)
 
 def encrypt(key: str, alphabet: str, input_text: str) -> str:
@@ -72,8 +72,8 @@ def encrypt(key: str, alphabet: str, input_text: str) -> str:
     encrypted_text = []
 
     for i in range(0, len(formatted_text), 2):
-        char_a = character_position(matrix, formatted_text[i])
-        char_b = character_position(matrix, formatted_text[i + 1])
+        char_a = get_coordinates(matrix, formatted_text[i])
+        char_b = get_coordinates(matrix, formatted_text[i + 1])
         if char_a[0] == char_b[0]:
             encrypted_text.append(matrix[char_a[0]][(char_a[1] + 1) % 5] + matrix[char_b[0]][(char_b[1] + 1) % 5])
         elif char_a[1] == char_b[1]:
@@ -95,8 +95,8 @@ def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
         formatted_text += sub_char
 
     for i in range(0, len(formatted_text), 2):
-        char_a = character_position(matrix, formatted_text[i])
-        char_b = character_position(matrix, formatted_text[i + 1])
+        char_a = get_coordinates(matrix, formatted_text[i])
+        char_b = get_coordinates(matrix, formatted_text[i + 1])
         if char_a[0] == char_b[0]:
             decrypted_text.append(matrix[char_a[0]][(char_a[1] - 1) % 5] + matrix[char_b[0]][(char_b[1] - 1) % 5])
         elif char_a[1] == char_b[1]:
