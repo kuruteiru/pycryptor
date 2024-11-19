@@ -6,6 +6,7 @@ config = {
 }
 
 def main():
+    print("adfgx")
     if len(sys.argv) == 1: return
     match sys.argv[1]:
         case "-e" | "-encrypt": print('encrypt')
@@ -28,10 +29,10 @@ def format_text(input_text: str) -> str:
     formatted_text = formatted_text.replace('j', 'i')
     return formatted_text
 
-def create_key_matrix(key: str) -> list[list[str]]:
+def create_key_matrix(key: str, alphabet: str) -> list[list[str]]:
     key = format_text(key)
     key_matrix = sorted(set(key), key = lambda x: key.index(x))
-    key_matrix += [x for x in config["alphabet"].replace('j', '') if x not in key_matrix]
+    key_matrix += [x for x in alphabet.replace('j', '') if x not in key_matrix]
     return [key_matrix[i:i+5] for i in range(0, 25, 5)]
 
 def create_columnar_key(key: str) -> list[int]:
