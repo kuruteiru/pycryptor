@@ -3,12 +3,6 @@ import PySide6.QtCore as qtc
 import ciphers
 import sys
 
-config = {
-    "alphabet": "abcdefghijklmnopqrstuvwxyz",
-    "substitution_characters": ('x', 'q'),
-    "replaced_characters": ('j', 'i')
-}
-
 class App(qtw.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -24,9 +18,9 @@ class App(qtw.QMainWindow):
         self.current_cipher = None
         self.cipher_selection = qtw.QComboBox()
         self.cipher_selection.currentTextChanged.connect(self.select_cipher)
-        self.cipher_selection.addItems(["playfair", "adfgvx", "adfgx"])
-        self.cipher_selection.setCurrentText("playfair")
-        self.cipher_selection.setGeometry(int(self.width()/2), int(self.height()/2), int(self.width()/2), int(self.height()/2))
+        self.cipher_selection.addItems(ciphers.__all__)
+        self.cipher_selection.setCurrentText(ciphers.__all__[0])
+        # self.cipher_selection.setGeometry(int(self.width()/2), int(self.height()/2), int(self.width()/2), int(self.height()/2))
         self.main_layout.addWidget(self.cipher_selection)
 
         self.main_layout.addLayout(self.gui_layout)
@@ -46,15 +40,16 @@ class App(qtw.QMainWindow):
         rerender = self.current_cipher is not None
         match cipher_name:
             case "playfair": self.current_cipher = ciphers.playfair
+            case "affine": self.current_cipher = ciphers.affine
             case "adfgvx": self.current_cipher = ciphers.adfgvx
-            case "adfgx": pass
+            case "adfgx": self.current_cipher = ciphers.adfgx
 
         if rerender: self.render_gui()
 
     def encrypt(self):
         if self.current_cipher is None: return
         self.update_key_matrix()
-        encrypted_text = self.current_cipher.encrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
+        encrypted_text = self.current_cipher.encrypt(self.key_text.text(), self.current_cipher.config["alphabet"], self.input_text.toPlainText())
         self.output_text.setText(encrypted_text.upper())
         formatted_input = self.current_cipher.format_text(self.input_text.toPlainText()).upper()
         formatted_input = ''.join([
@@ -67,7 +62,7 @@ class App(qtw.QMainWindow):
     def decrypt(self):
         if self.current_cipher is None: return
         self.update_key_matrix()
-        decrypted_text = self.current_cipher.decrypt(self.key_text.text(), config["alphabet"], self.input_text.toPlainText())
+        decrypted_text = self.current_cipher.decrypt(self.key_text.text(), self.current_cipher.config["alphabet"], self.input_text.toPlainText())
         self.output_text.setText(decrypted_text.upper())
         formatted_input = self.current_cipher.format_text(self.input_text.toPlainText()).upper()
         self.formatted_input_text.setText(formatted_input)
@@ -81,10 +76,10 @@ class App(qtw.QMainWindow):
 
     def update_key_matrix(self):
         if self.current_cipher is None: return
-        matrix = self.current_cipher.create_key_matrix(self.key_text.text(), config["alphabet"])
+        matrix = self.current_cipher.create_key_matrix(self.key_text.text(), self.current_cipher.config["alphabet"])
         
-        for i in range(5):
-            for j in range(5):
+        for i in range(len(matrix)):
+            for j in range(len(matrix[0])):
                 item = qtw.QTableWidgetItem(matrix[i][j])
                 item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
                 self.key_matrix_table.setItem(i, j, item)
@@ -106,17 +101,20 @@ class App(qtw.QMainWindow):
         if "key" in input_values: self.key_text.setText(input_values["key"])
         self.gui_layout.addWidget(self.key_text)
 
-        self.key_matrix_table = qtw.QTableWidget(5, 5)
-        self.key_matrix_table.setFixedSize(190, 150)
+        matrix_size = 5
+        cell_size = 30
+
+        self.key_matrix_table = qtw.QTableWidget(matrix_size, matrix_size)
+        self.key_matrix_table.setFixedSize(matrix_size * cell_size + 40, matrix_size * cell_size)
         self.key_matrix_table.setEditTriggers(qtw.QTableWidget.EditTrigger.NoEditTriggers)
         self.key_matrix_table.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.key_matrix_table.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.key_matrix_table.horizontalHeader().setVisible(False)
         self.key_matrix_table.verticalHeader().setVisible(False)
 
-        for i in range(5):
-            self.key_matrix_table.setColumnWidth(i, 30)
-            self.key_matrix_table.setRowHeight(i, 30)
+        for i in range(matrix_size):
+            self.key_matrix_table.setColumnWidth(i, cell_size)
+            self.key_matrix_table.setRowHeight(i, cell_size)
 
         self.input_label = qtw.QLabel("input")
         self.gui_layout.addWidget(self.input_label)
@@ -154,6 +152,7 @@ class App(qtw.QMainWindow):
         self.gui_layout.addLayout(self.button_layout)
 
 def main():
+    print(ciphers.__all__)
     app = qtw.QApplication(sys.argv)
     window = App()
     window.show()
