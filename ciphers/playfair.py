@@ -193,6 +193,7 @@ class App(qtw.QMainWindow):
             self.input_text.toPlainText()
         )
         self.output_text.setText(encrypted_text.upper())
+
         formatted_input = format_text(self.input_text.toPlainText()).upper()
         formatted_input = ''.join([
             c if i == 0 or i % 2 != 0
@@ -209,8 +210,7 @@ class App(qtw.QMainWindow):
             self.input_text.toPlainText()
         )
         self.output_text.setText(decrypted_text.upper())
-        formatted_input = format_text(self.input_text.toPlainText()).upper()
-        self.formatted_input_text.setText(formatted_input)
+
         formatted_input = self.input_text.toPlainText().upper()
         formatted_input = ''.join([
             c if i == 0 or i % 2 != 0
@@ -221,7 +221,6 @@ class App(qtw.QMainWindow):
 
     def update_key_matrix(self):
         matrix = create_key_matrix(self.key_text.text(), config["alphabet"])
-        
         for i in range(len(matrix)):
             for j in range(len(matrix[0])):
                 item = qtw.QTableWidgetItem(matrix[i][j])
