@@ -24,12 +24,14 @@ def main() -> None:
         case _: print("unknown argument")
 
 def format_text(input_text: str) -> str:
+    if len(input_text) <= 0: return input_text
     char_map: dict[str, str] = tf.get_nonrepeating_char_map()
 
     formatted_text: str = ''
     formatted_text = tf.normalize_text(input_text, char_map = char_map)
     formatted_text = tf.format_repeating_chars(formatted_text)
     formatted_text = tf.even_length(formatted_text)
+    formatted_text = formatted_text.replace('j', 'i')
 
     return formatted_text
 
@@ -47,6 +49,8 @@ def get_coordinates(matrix: list[list[str]], char: str) -> tuple[int, int]:
     return (-1, -1)
 
 def encrypt(key: str, alphabet: str, input_text: str) -> str:
+    if len(input_text) <= 0: return input_text
+
     matrix: list[list[str]] = create_key_matrix(key, alphabet)
     formatted_text: str = format_text(input_text)
     encrypted_text: list[str] = []
@@ -65,6 +69,8 @@ def encrypt(key: str, alphabet: str, input_text: str) -> str:
     return ''.join(encrypted_text)
 
 def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
+    if len(encrypted_text) <= 0: return encrypted_text
+
     matrix: list[list[str]] = create_key_matrix(key, alphabet)
     formatted_text: str = tf.even_length(encrypted_text.lower())
     decrypted_text: list[str] = []
