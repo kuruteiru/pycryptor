@@ -3,5 +3,4 @@ __pycache__
 venv
 env
 
-todo.md
-inputs.md
+ignore/
