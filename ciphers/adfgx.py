@@ -187,14 +187,15 @@ class App(qtw.QMainWindow):
         )
         self.output_text.setText(encrypted_text.upper())
 
-        formatted_input = format_text(self.input_text.toPlainText()).upper()
-        print(f"formated_input: {formatted_input}")
-        formatted_input = ''.join([
-            c if i == 0 or i % 2 != 0
-            else f' {c}'
-            for i, c in enumerate(formatted_input)
-        ])
-        self.formatted_input_text.setText(formatted_input)
+        # formatted_input = format_text(self.input_text.toPlainText()).upper()
+        # formatted_input = self.input_text.toPlainText().upper()
+        # print(f"formated_input: {formatted_input}")
+        # formatted_input = ''.join([
+        #     c if i == 0 or i % 2 != 0
+        #     else f' {c}'
+        #     for i, c in enumerate(formatted_input)
+        # ])
+        # self.formatted_input_text.setText(formatted_input)
 
     def decrypt(self):
         print("decrypt")
@@ -207,19 +208,18 @@ class App(qtw.QMainWindow):
         )
         self.output_text.setText(decrypted_text.upper())
 
-        formatted_input = format_text(self.input_text.toPlainText()).upper()
+        # formatted_input = format_text(self.input_text.toPlainText()).upper()
         # formatted_input = self.input_text.toPlainText().upper()
-        print(f"formated_input: {formatted_input}")
-        formatted_input = ''.join([
-            c if i == 0 or i % 2 != 0
-            else f' {c}'
-            for i, c in enumerate(formatted_input)
-        ])
-        self.formatted_input_text.setText(formatted_input)
+        # print(f"formated_input: {formatted_input}")
+        # formatted_input = ''.join([
+        #     c if i == 0 or i % 2 != 0
+        #     else f' {c}'
+        #     for i, c in enumerate(formatted_input)
+        # ])
+        # self.formatted_input_text.setText(formatted_input)
 
     def update_key_matrix(self):
         matrix = create_key_matrix(self.key1_text.text(), config["alphabet"])
-        
         for i in range(len(matrix)):
             for j in range(len(matrix[0])):
                 item = qtw.QTableWidgetItem(matrix[i][j])
