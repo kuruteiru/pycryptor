@@ -2,6 +2,8 @@ from typing import Any
 import text_formatter as tf
 import PySide6.QtWidgets as qtw
 import PySide6.QtCore as qtc
+import random
+import string
 import sys
 
 config: dict[str, Any] = {
@@ -44,6 +46,11 @@ def create_columnar_key(key: str) -> list[int]:
     pairs: list[tuple[str, int]] = sorted(zip(key, positions))
     sorted_positions: list[int] = list(zip(*pairs))[1]
     return sorted_positions
+
+def random_alphabet(length: int) -> str:
+    alphabet: str = string.ascii_lowercase.replace('j', '')
+    result: list[str] = random.sample(alphabet, length)
+    return ''.join(result)
 
 def get_coordinates(key_matrix: list[list[str]], char: str) -> tuple[str, str]:
     coordinates: str = "ADFGX"
