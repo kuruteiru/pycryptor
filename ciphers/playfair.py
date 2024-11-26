@@ -37,7 +37,10 @@ def format_text(input_text: str) -> str:
 
 def create_key_matrix(key: str, alphabet: str) -> list[list[str]]:
     key = key.lower().replace('j', 'i')
-    key_matrix: list[str] = [c for c in unicodedata.normalize('NFD', key) if c.isalpha() and unicodedata.category(c) != 'Mn']
+    key_matrix: list[str] = [
+        c for c in unicodedata.normalize('NFD', key) 
+        if c.isalpha() and unicodedata.category(c) != 'Mn'
+    ]
     key_matrix = sorted(set(key_matrix), key = lambda x: key_matrix.index(x))
     key_matrix += [x for x in alphabet if x not in key_matrix]
     return [key_matrix[i:i+5] for i in range(0, 25, 5)]
@@ -48,7 +51,7 @@ def get_coordinates(matrix: list[list[str]], char: str) -> tuple[int, int]:
         if char in row: return (i, row.index(char))
     return (-1, -1)
 
-def encrypt(key: str, alphabet: str, input_text: str) -> str:
+def encrypt(input_text: str, key: str, alphabet: str) -> str:
     if len(input_text) <= 0: return input_text
 
     matrix: list[list[str]] = create_key_matrix(key, alphabet)
@@ -68,11 +71,11 @@ def encrypt(key: str, alphabet: str, input_text: str) -> str:
 
     return ''.join(encrypted_text)
 
-def decrypt(key: str, alphabet: str, encrypted_text: str) -> str:
-    if len(encrypted_text) <= 0: return encrypted_text
+def decrypt(input_text: str, key: str, alphabet: str) -> str:
+    if len(input_text) <= 0: return input_text
 
     matrix: list[list[str]] = create_key_matrix(key, alphabet)
-    formatted_text: str = tf.even_length(encrypted_text.lower())
+    formatted_text: str = tf.even_length(input_text.lower())
     decrypted_text: list[str] = []
 
     for i in range(0, len(formatted_text), 2):
@@ -165,9 +168,9 @@ class App(qtw.QMainWindow):
     def encrypt(self) -> None:
         self.update_key_matrix()
         encrypted_text: str = encrypt(
+            self.input_text.toPlainText(),
             self.key_text.text(), 
-            config["alphabet"], 
-            self.input_text.toPlainText()
+            config["alphabet"]
         )
         self.output_text.setText(encrypted_text.upper())
 
@@ -178,9 +181,9 @@ class App(qtw.QMainWindow):
     def decrypt(self) -> None:
         self.update_key_matrix()
         decrypted_text: str = decrypt(
+            self.input_text.toPlainText(),
             self.key_text.text(), 
-            config["alphabet"],
-            self.input_text.toPlainText()
+            config["alphabet"]
         )
         self.output_text.setText(decrypted_text.upper())
 
