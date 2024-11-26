@@ -1,13 +1,14 @@
+from typing import Any
+import text_formatter as tf
 import PySide6.QtWidgets as qtw
 import PySide6.QtCore as qtc
-import unicodedata
 import sys
 
-config = {
+config: dict[str, Any] = {
     "alphabet": "abcdefghiklmnopqrstuvwxyz",
 }
 
-def main():
+def main() -> None:
     if len(sys.argv) == 1:
         app = qtw.QApplication(sys.argv)
         window = App()
@@ -22,17 +23,12 @@ def main():
         case _: print("unknown argument")
 
 def format_text(input_text: str) -> str:
-    formatted_text = [
-        c.lower() for c in input_text
-        if c.isalpha() or c.isspace()
-    ]
-    
-    formatted_text = ''.join([
-        c for c in unicodedata.normalize('NFD', ''.join(formatted_text))
-        if unicodedata.category(c) != 'Mn'
-    ])
-    
+    if len(input_text) <= 0: return input_text
+
+    char_map: dict[str, str] = tf.get_char_map()
+    formatted_text: str = tf.normalize_text(input_text, char_map = char_map)
     formatted_text = formatted_text.replace('j', 'i')
+
     return formatted_text
 
 def create_key_matrix(key: str, alphabet: str) -> list[list[str]]:
@@ -42,67 +38,72 @@ def create_key_matrix(key: str, alphabet: str) -> list[list[str]]:
     return [key_matrix[i:i+5] for i in range(0, 25, 5)]
 
 def create_columnar_key(key: str) -> list[int]:
+    if len(key) <= 0: return []
     key = format_text(key)
-    positions = list(range(len(key)))
-    pairs = sorted(zip(key, positions))
-    sorted_positions = list(zip(*pairs))[1]
+    positions: list[int] = list(range(len(key)))
+    pairs: list[tuple[str, int]] = sorted(zip(key, positions))
+    sorted_positions: list[int] = list(zip(*pairs))[1]
     return sorted_positions
 
 def get_coordinates(key_matrix: list[list[str]], char: str) -> tuple[str, str]:
-    coordinates = "ADFGX"
+    coordinates: str = "ADFGX"
     for i, row in enumerate(key_matrix):
         if char in row: return (coordinates[i], coordinates[row.index(char)])
     return ('', '')
 
-def encrypt(key1: str, key2: str, alphabet: str, input_text: str) -> str:
-    matrix = create_key_matrix(key1, alphabet)
-    formatted_text = format_text(input_text)
-    coordinates = ""
+def encrypt(input_text: str, key1: str, key2: str, alphabet: str) -> str:
+    if len(input_text) <= 0: return input_text
+
+    matrix: list[list[str]] = create_key_matrix(key1, alphabet)
+    formatted_text: str = format_text(input_text)
+    coordinates: str = '' 
     for char in formatted_text:
-        coords = get_coordinates(matrix, char)
+        coords: tuple[str, str] = get_coordinates(matrix, char)
         coordinates += coords[0] + coords[1]
     
-    key_order = create_columnar_key(key2)
-    key_length = len(key2)
+    key_order: list[int] = create_columnar_key(key2)
+    key_length: int = len(key2)
     
     if len(coordinates) % key_length != 0:
-        x_coords = get_coordinates(matrix, 'x')
+        x_coords: tuple[str, str] = get_coordinates(matrix, 'x')
         while len(coordinates) % key_length != 0:
             coordinates += x_coords[0] + x_coords[1]
     
-    columns = [coordinates[i::key_length] for i in range(key_length)]
+    columns: list[str] = [coordinates[i::key_length] for i in range(key_length)]
     return ''.join(columns[i] for i in key_order)
 
-def decrypt(key1: str, key2: str, alphabet: str, encrypted_text: str) -> str:
-    matrix = create_key_matrix(key1, alphabet)
-    key_order = create_columnar_key(key2)
-    key_length = len(key2)
-    col_length = len(encrypted_text) // key_length
-    columns = [''] * key_length
+def decrypt(input_text: str, key1: str, key2: str, alphabet: str) -> str:
+    if len(input_text) <= 0: return input_text
 
-    pos = 0
+    matrix: list[list[str]] = create_key_matrix(key1, alphabet)
+    key_order: list[int] = create_columnar_key(key2)
+    key_length: int = len(key2)
+    col_length: int = len(input_text) // key_length
+    columns: list[str] = [''] * key_length
+
+    pos: int = 0
     for i in range(col_length):
         for j in key_order:
-            if pos < len(encrypted_text):
-                columns[j] += encrypted_text[pos]
+            if pos < len(input_text):
+                columns[j] += input_text[pos]
                 pos += 1
     
-    coordinates = ""
+    coordinates: str = ''
     for i in range(col_length):
         for col in columns:
             if i < len(col):
                 coordinates += col[i]
     
-    decrypted_text = ""
+    decrypted_text: str = ''
     for i in range(0, len(coordinates), 2):
-        row_idx = "ADFGX".index(coordinates[i])
-        col_idx = "ADFGX".index(coordinates[i + 1])
+        row_idx: int = "ADFGX".index(coordinates[i])
+        col_idx: int = "ADFGX".index(coordinates[i + 1])
         decrypted_text += matrix[row_idx][col_idx]
     
     return decrypted_text
 
 class App(qtw.QMainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("adfgx")
         self.central_widget = qtw.QWidget()
@@ -180,10 +181,10 @@ class App(qtw.QMainWindow):
         print("encrypt")
         self.update_key_matrix()
         encrypted_text = encrypt(
+            self.input_text.toPlainText(),
             self.key1_text.text(), 
             self.key2_text.text(), 
-            config["alphabet"], 
-            self.input_text.toPlainText()
+            config["alphabet"]
         )
         self.output_text.setText(encrypted_text.upper())
 
@@ -201,10 +202,10 @@ class App(qtw.QMainWindow):
         print("decrypt")
         self.update_key_matrix()
         decrypted_text = decrypt(
+            self.input_text.toPlainText(),
             self.key1_text.text(), 
             self.key2_text.text(), 
-            config["alphabet"],
-            self.input_text.toPlainText()
+            config["alphabet"]
         )
         self.output_text.setText(decrypted_text.upper())
 
