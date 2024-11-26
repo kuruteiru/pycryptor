@@ -63,6 +63,7 @@ def encrypt(input_text: str, key1: str, key2: str, alphabet: str) -> str:
 
     matrix: list[list[str]] = create_key_matrix(key1, alphabet)
     formatted_text: str = format_text(input_text)
+
     coordinates: str = '' 
     for char in formatted_text:
         coords: tuple[str, str] = get_coordinates(matrix, char)
@@ -70,14 +71,16 @@ def encrypt(input_text: str, key1: str, key2: str, alphabet: str) -> str:
     
     key_order: list[int] = create_columnar_key(key2)
     key_length: int = len(key2)
-    
-    if len(coordinates) % key_length != 0:
+
+    if key_length > 0 and len(coordinates) % key_length != 0:
         x_coords: tuple[str, str] = get_coordinates(matrix, 'x')
         while len(coordinates) % key_length != 0:
             coordinates += x_coords[0] + x_coords[1]
     
     columns: list[str] = [coordinates[i::key_length] for i in range(key_length)]
-    return ''.join(columns[i] for i in key_order)
+    result = ''.join(columns[i] for i in key_order)
+    print(f'res: {result}')
+    return result
 
 def decrypt(input_text: str, key1: str, key2: str, alphabet: str) -> str:
     if len(input_text) <= 0: return input_text
@@ -85,7 +88,7 @@ def decrypt(input_text: str, key1: str, key2: str, alphabet: str) -> str:
     matrix: list[list[str]] = create_key_matrix(key1, alphabet)
     key_order: list[int] = create_columnar_key(key2)
     key_length: int = len(key2)
-    col_length: int = len(input_text) // key_length
+    col_length: int = len(input_text) // key_length if key_length > 0 else 0
     columns: list[str] = [''] * key_length
 
     pos: int = 0
