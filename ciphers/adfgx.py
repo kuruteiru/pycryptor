@@ -34,17 +34,25 @@ def format_text(input_text: str) -> str:
     return formatted_text
 
 def create_key_matrix(key: str, alphabet: str) -> list[list[str]]:
-    key = format_text(key)
+    if len(key) > 0:
+        char_map = tf.get_char_map()
+        for c in char_map: char_map[c] = ''
+        key = tf.normalize_text(key, char_map = char_map)
+        key = key.replace('j', 'i')
+
     key_matrix = sorted(set(key), key = lambda x: key.index(x))
     key_matrix += [x for x in alphabet.replace('j', '') if x not in key_matrix]
+
     return [key_matrix[i:i+5] for i in range(0, 25, 5)]
 
 def create_columnar_key(key: str) -> list[int]:
     if len(key) <= 0: return []
+
     key = format_text(key)
     positions: list[int] = list(range(len(key)))
     pairs: list[tuple[str, int]] = sorted(zip(key, positions))
     sorted_positions: list[int] = list(zip(*pairs))[1]
+
     return sorted_positions
 
 def random_alphabet(length: int) -> str:
@@ -153,12 +161,23 @@ class App(qtw.QMainWindow):
         self.cell_size = 30
 
         self.key_matrix_table = qtw.QTableWidget(self.matrix_size, self.matrix_size)
-        self.key_matrix_table.setFixedSize(self.matrix_size * self.cell_size + 40, self.matrix_size * self.cell_size)
+        self.key_matrix_table.setFixedSize(
+            self.matrix_size * self.cell_size + self.cell_size + 40,
+            self.matrix_size * self.cell_size + self.cell_size
+        )
         self.key_matrix_table.setEditTriggers(qtw.QTableWidget.EditTrigger.NoEditTriggers)
         self.key_matrix_table.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.key_matrix_table.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.key_matrix_table.horizontalHeader().setVisible(False)
-        self.key_matrix_table.verticalHeader().setVisible(False)
+
+        headers: list[str] = ['A', 'D', 'F', 'G', 'X']
+        self.key_matrix_table.setHorizontalHeaderLabels(headers)
+        self.key_matrix_table.setVerticalHeaderLabels(headers)
+        self.key_matrix_table.horizontalHeader().setDefaultAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+        self.key_matrix_table.verticalHeader().setDefaultAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+        self.key_matrix_table.horizontalHeader().setFixedHeight(self.cell_size)
+        self.key_matrix_table.verticalHeader().setFixedWidth(self.cell_size)
+        self.key_matrix_table.horizontalHeader().setSectionResizeMode(qtw.QHeaderView.ResizeMode.Fixed)
+        self.key_matrix_table.verticalHeader().setSectionResizeMode(qtw.QHeaderView.ResizeMode.Fixed)
 
         for i in range(self.matrix_size):
             self.key_matrix_table.setColumnWidth(i, self.cell_size)
@@ -175,15 +194,14 @@ class App(qtw.QMainWindow):
         self.formatted_input_text.setReadOnly(True)
         self.main_layout.addWidget(self.formatted_input_text)
 
-        v_box_layout = qtw.QHBoxLayout()
+        self.h_box_layout = qtw.QHBoxLayout()
 
-        output_label = qtw.QLabel("output")
-        self.main_layout.addWidget(output_label)
+        self.output_label = qtw.QLabel("output")
+        self.main_layout.addWidget(self.output_label)
         self.output_text = qtw.QTextEdit()
         self.output_text.setReadOnly(True)
-        v_box_layout.addWidget(self.output_text)
-        v_box_layout.addWidget(self.key_matrix_table)
-        self.main_layout.addLayout(v_box_layout)
+        self.h_box_layout.addWidget(self.output_text)
+        self.main_layout.addLayout(self.h_box_layout)
 
         matrix = create_key_matrix(self.key1_text.text(), config["alphabet"])
         
@@ -192,6 +210,17 @@ class App(qtw.QMainWindow):
                 item = qtw.QTableWidgetItem(matrix[i][j])
                 item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
                 self.key_matrix_table.setItem(i, j, item)
+
+        self.key_matrix_v_box_layout = qtw.QVBoxLayout()
+
+        generate_button = qtw.QPushButton("generate")
+        generate_button.clicked.connect(self.random_key_matrix)
+
+        self.key_matrix_v_box_layout.addWidget(self.key_matrix_table)
+        self.key_matrix_v_box_layout.addWidget(generate_button)
+        self.key_matrix_v_box_layout.addStretch()
+
+        self.h_box_layout.addLayout(self.key_matrix_v_box_layout)
 
         button_layout = qtw.QHBoxLayout()
 
@@ -213,7 +242,6 @@ class App(qtw.QMainWindow):
             self.key2_text.text(), 
             config["alphabet"]
         )
-
         self.output_text.setText(encrypted_text.upper())
 
         formatted_input = format_text(self.input_text.toPlainText()).upper()
@@ -227,7 +255,6 @@ class App(qtw.QMainWindow):
             self.key2_text.text(), 
             config["alphabet"]
         )
-
         self.output_text.setText(decrypted_text.upper())
 
         formatted_input = format_text(self.input_text.toPlainText()).upper()
@@ -240,6 +267,10 @@ class App(qtw.QMainWindow):
                 item = qtw.QTableWidgetItem(matrix[i][j])
                 item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
                 self.key_matrix_table.setItem(i, j, item)
+
+    def random_key_matrix(self):
+        self.key1_text.setText(random_alphabet(self.matrix_size * self.matrix_size))
+        self.update_key_matrix()
 
     def clear_layout(self, layout: qtw.QLayout | None): 
         if layout is None: return
