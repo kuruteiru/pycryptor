@@ -28,7 +28,7 @@ def format_text(input_text: str) -> str:
     if len(input_text) <= 0: return input_text
 
     char_map: dict[str, str] = tf.get_char_map()
-    formatted_text: str = tf.normalize_text(input_text, char_map = char_map)
+    formatted_text: str = tf.normalize_text(input_text, char_map=char_map)
     formatted_text = formatted_text.replace('j', 'i')
 
     return formatted_text
@@ -40,7 +40,7 @@ def create_key_matrix(key: str, alphabet: str) -> list[list[str]]:
         key = tf.normalize_text(key, char_map = char_map)
         key = key.replace('j', 'i')
 
-    key_matrix = sorted(set(key), key = lambda x: key.index(x))
+    key_matrix = sorted(set(key), key=lambda x: key.index(x))
     key_matrix += [x for x in alphabet.replace('j', '') if x not in key_matrix]
 
     return [key_matrix[i:i+5] for i in range(0, 25, 5)]
