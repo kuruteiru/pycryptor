@@ -70,6 +70,15 @@ def get_nonrepeating_char_map() -> dict[str, str]:
     char_map[' '] = 'x' + unicodedata.name(' ').lower() + 'x'
     return char_map
 
+def get_deleting_char_map(chars: list[str] | None = None) -> dict[str, str]:
+    if chars is not None:
+        char_map: dict[str, str] = {c: '' for c in chars}
+        return char_map
+
+    char_map: dict[str, str] = {str(i): '' for i in range(10)}
+    char_map[' '] = ''
+    return char_map
+
 def replace_char_map_keys(input_text: str, char_map: dict[str, str]) -> str:
     if len(input_text) <= 0: return input_text
     for key, value in char_map.items():
