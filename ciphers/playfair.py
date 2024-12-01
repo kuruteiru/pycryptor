@@ -3,10 +3,11 @@ import text_formatter as tf
 import PySide6.QtWidgets as qtw
 import PySide6.QtCore as qtc
 import unicodedata
+import string
 import sys
 
 config: dict[str, Any] = {
-    "alphabet": "abcdefghiklmnopqrstuvwxyz",
+    "alphabet": string.ascii_lowercase.replace('j', '')
 }
 
 def main() -> None: 

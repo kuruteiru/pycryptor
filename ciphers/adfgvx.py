@@ -7,7 +7,7 @@ import string
 import sys
 
 config: dict[str, Any] = {
-    "alphabet": "abcdefghijklmnopqrstuvwxyz0123456789",
+    "alphabet": string.ascii_lowercase + string.digits
 }
 
 def main() -> None:
