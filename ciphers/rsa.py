@@ -1,14 +1,14 @@
-from typing import Any
-import PySide6.QtWidgets as qtw
-import string
+from PySide6 import QtWidgets as qtw
+import text_formatter as tf
+from math import gcd
 import random
 import sys
 
-config: dict[str, Any] = {
-    "alphabet": string.ascii_lowercase + string.digits
-}
+BIT_LENGTH = 512
+BLOCK_SIZE = 5
+ASCII_BITS = 8 
 
-def main() -> None:
+def main():
     if len(sys.argv) == 1:
         app = qtw.QApplication(sys.argv)
         window = App()
@@ -16,73 +16,87 @@ def main() -> None:
         sys.exit(app.exec())
 
     match sys.argv[1]:
-        case "-e" | "-encrypt": print("encrypt")
-        case "-d" | "-decrypt": print("decrypt")
-        case "-k" | "-keygen": print("key generation")
+        case "-e" | "-encrypt": print('encrypt')
+        case "-d" | "-decrypt": print('decrypt')
+        case "-k" | "-keygen": print('keygen')
         case _: print("unknown argument")
-
-def generate_keys(key_size: int) -> tuple[tuple[int, int], tuple[int, int]]:
-    p = generate_prime(key_size // 2)
-    q = generate_prime(key_size // 2)
-    n = p * q
-    euler = (p - 1) * (q - 1)
-
-    e = find_coprime(euler)
-    d = modular_inverse(e, euler)
-
-    public_key = (e, n)
-    private_key = (d, n)
-
-    return (public_key, private_key)
-
-def encrypt(message: str, public_key: tuple[int, int]) -> str:
-    e, n = public_key
-    return ' '.join(
-        str(pow(ord(char), e, n)) 
-        for char in message
-    )
-
-def decrypt(ciphertext: str, private_key: tuple[int, int]) -> str:
-    d, n = private_key
-    return ''.join(
-        chr(pow(int(chunk), d, n)) 
-        for chunk in ciphertext.split()
-    )
-
-def generate_prime(bits: int) -> int:
-    while True:
-        num = random.getrandbits(bits)
-        if is_prime(num): return num
-
-def is_prime(num: int) -> bool:
-    if num < 2: return False
-
-    for _ in range(10):
-        a = random.randint(2, num - 2)
-        if pow(a, num - 1, num) != 1: return False
+        
+def is_prime(n, k = 50): 
+    if n <= 1: return False
+    if n <= 3: return True
+    if n % 2 == 0: return False
+    
+    def miller_test(d, n):
+        a = random.randint(2, n - 2)
+        x = pow(a, d, n)
+        if x == 1 or x == n - 1: return True
+        while d != n - 1:
+            x = (x * x) % n
+            d *= 2
+            if x == 1: return False
+            if x == n - 1: return True
+        return False
+    
+    d = n - 1
+    while d % 2 == 0: d //= 2
+    
+    for _ in range(k):
+        if not miller_test(d, n): return False
 
     return True
 
-def find_coprime(euler: int) -> int:
-    e = 3
-    while gcd(e, euler) != 1: e += 2
-    return e
+def generate_large_prime(bit_length: int) -> int:
+    while True:
+        prime_candidate = random.getrandbits(bit_length)
+        if is_prime(prime_candidate): return prime_candidate
 
-def gcd(a: int, b: int) -> int:
-    while b: a, b = b, a % b
-    return a
+def generate_keys(bit_length: int = 4096) -> tuple[tuple[int, int], tuple[int, int]]:
+    p = generate_large_prime(bit_length)
+    q = generate_large_prime(bit_length)
+    n = p * q
+    phi = (p - 1) * (q - 1)
+    e = random.randint(2, phi - 1)
+    while gcd(e, phi) != 1:
+        e = random.randint(2, phi - 1)
+    d = pow(e, -1, phi)
+    return (n, e), (n, d)
 
-def modular_inverse(a: int, m: int) -> int:
-    m0, x0, x1 = m, 0, 1
-    while a > 1:
-        q = a // m
-        m, a = a % m, m
-        x0, x1 = x1 - q * x0, x0
+def text_to_numeric(text: str) -> int:
+    binary = ''.join(
+        format(ord(char), f'0{ASCII_BITS}b')
+        for char in text
+    )
+    return int(binary, 2)
 
-    return x1 + m0 if x1 < 0 else x1
+def numeric_to_text(number: int) -> str:
+    binary = format(number, 'b')
+    padded_binary = binary.zfill(
+        (len(binary) + ASCII_BITS - 1) // ASCII_BITS * ASCII_BITS
+    )
+    chars = [
+        chr(int(padded_binary[i:i+ASCII_BITS], 2))
+        for i in range(0, len(padded_binary), ASCII_BITS)
+    ]
+    return ''.join(chars)
+
+def encrypt(message: str, public_key: tuple[int, int]) -> list[int]:
+    n, e = public_key
+    blocks = [
+        text_to_numeric(message[i:i+BLOCK_SIZE])
+        for i in range(0, len(message), BLOCK_SIZE)
+    ]
+    return [pow(block, e, n) for block in blocks]
+
+def decrypt(ciphertext: list[int], private_key: tuple[int, int]) -> str:
+    n, d = private_key
+    blocks = [
+        pow(block, d, n)
+        for block in ciphertext
+    ]
+    return ''.join(numeric_to_text(block) for block in blocks)
 
 class App(qtw.QMainWindow):
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
         self.setWindowTitle("rsa")
         self.central_widget = qtw.QWidget()
@@ -95,61 +109,63 @@ class App(qtw.QMainWindow):
         self.input_text = qtw.QTextEdit()
         self.main_layout.addWidget(self.input_text)
 
-        self.output_label = qtw.QLabel("output")
-        self.main_layout.addWidget(self.output_label)
+        self.input_label = qtw.QLabel("public key (n, e)")
+        self.main_layout.addWidget(self.input_label)
+        self.public_key_field = qtw.QLineEdit()
+        self.main_layout.addWidget(self.public_key_field)
+
+        self.input_label = qtw.QLabel("private key (n, d)")
+        self.main_layout.addWidget(self.input_label)
+        self.private_key_field = qtw.QLineEdit()
+        self.main_layout.addWidget(self.private_key_field)
+
+        self.input_label = qtw.QLabel("output")
+        self.main_layout.addWidget(self.input_label)
         self.output_text = qtw.QTextEdit()
         self.output_text.setReadOnly(True)
         self.main_layout.addWidget(self.output_text)
 
-        self.public_key_label = qtw.QLabel("public key")
-        self.main_layout.addWidget(self.public_key_label)
-        self.public_key_text = qtw.QLineEdit()
-        self.main_layout.addWidget(self.public_key_text)
-
-        self.private_key_label = qtw.QLabel("private key")
-        self.main_layout.addWidget(self.private_key_label)
-        self.private_key_text = qtw.QLineEdit()
-        self.main_layout.addWidget(self.private_key_text)
-
         button_layout = qtw.QHBoxLayout()
 
-        encrypt_button = qtw.QPushButton("encrypt")
-        encrypt_button.clicked.connect(self.encrypt)
-        button_layout.addWidget(encrypt_button)
+        self.generate_keys_button = qtw.QPushButton("generate keys")
+        self.generate_keys_button.clicked.connect(self.generate_keys)
+        button_layout.addWidget(self.generate_keys_button)
 
-        decrypt_button = qtw.QPushButton("decrypt")
-        decrypt_button.clicked.connect(self.decrypt)
-        button_layout.addWidget(decrypt_button)
+        self.encrypt_button = qtw.QPushButton("encrypt")
+        self.encrypt_button.clicked.connect(self.encrypt_text)
+        button_layout.addWidget(self.encrypt_button)
 
-        generate_key_button = qtw.QPushButton("generate keys")
-        generate_key_button.clicked.connect(self.generate_keys)
-        button_layout.addWidget(generate_key_button)
+        self.decrypt_button = qtw.QPushButton("decrypt")
+        self.decrypt_button.clicked.connect(self.decrypt_text)
+        button_layout.addWidget(self.decrypt_button)
 
         self.main_layout.addLayout(button_layout)
 
-    def encrypt(self):
+        self.generate_keys()
+
+    def encrypt_text(self):
         try:
-            keys: list[str] = self.public_key_text.text().split(',')
-            public_key: tuple[int, int] = (int(keys[0]), int(keys[1]))
-            encrypted_text: str = encrypt(self.input_text.toPlainText(), public_key)
-            self.output_text.setText(encrypted_text)
+            text = tf.normalize_text(self.input_text.toPlainText())
+            public_key = eval(self.public_key_field.text())
+            encrypted = encrypt(text, public_key)
+            self.output_text.setText(str(encrypted))
         except Exception as e:
             self.output_text.setText(f"error: {e}")
 
-    def decrypt(self):
+    def decrypt_text(self):
         try:
-            keys: list[str] = self.private_key_text.text().split(',')
-            private_key: tuple[int, int] = (int(keys[0]), int(keys[1]))
-            decrypted_text: str = decrypt(self.input_text.toPlainText(), private_key)
-            self.output_text.setText(decrypted_text)
+            text = eval(self.output_text.toPlainText())
+            private_key = eval(self.private_key_field.text())
+            decrypted = decrypt(text, private_key)
+            self.output_text.setText(decrypted)
         except Exception as e:
             self.output_text.setText(f"error: {e}")
 
     def generate_keys(self):
         try:
-            public_key, private_key = generate_keys(2048)
-            self.public_key_text.setText(f"{public_key[0]},{public_key[1]}")
-            self.private_key_text.setText(f"{private_key[0]},{private_key[1]}")
+            self.public_key, self.private_key = generate_keys(BIT_LENGTH)
+            self.public_key_field.setText(str(self.public_key))
+            self.private_key_field.setText(str(self.private_key))
         except Exception as e:
             self.output_text.setText(f"error: {e}")
 
