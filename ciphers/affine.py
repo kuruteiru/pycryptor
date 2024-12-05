@@ -1,12 +1,12 @@
+from string import ascii_lowercase
 from typing import Any
-import text_formatter as tf
+from math import gcd
 import PySide6.QtWidgets as qtw
-import string
-import math
+import text_formatter as tf
 import sys
 
 config: dict[str, Any] = {
-    "alphabet": string.ascii_lowercase,
+    "alphabet": ascii_lowercase,
 }
 
 def main() -> None:
@@ -24,7 +24,7 @@ def main() -> None:
 
 def modular_inverse(a: int, m: int) -> int | None:
     if m == 0: return None
-    if math.gcd(a, m) != 1: return None
+    if gcd(a, m) != 1: return None
 
     a = a % m
     for x in range(1, m):
