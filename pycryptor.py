@@ -151,11 +151,33 @@ class App(qtw.QMainWindow):
         
         self.gui_layout.addLayout(self.button_layout)
 
-def main():
+def main() -> None:
+    if len(sys.argv) == 1:
+        app = qtw.QApplication(sys.argv)
+
+        stylesheet_path = "../stylesheet"
+        try: 
+            with open(stylesheet_path, "r") as stylesheet:
+                app.setStyleSheet(stylesheet.read())
+        except FileNotFoundError:
+            print("the stylesheet file does not exist")
+        except IOError:
+            print("an error occurred while reading stylesheet file")
+        except:
+            print("stylesheet error")
+
+        window = App()
+        window.show()
+        sys.exit(app.exec())
+
     print(ciphers.__all__)
-    app = qtw.QApplication(sys.argv)
-    window = App()
-    window.show()
-    sys.exit(app.exec())
+    match sys.argv[1]:
+        case "-e" | "-encrypt": print('encrypt')
+        case "-d" | "-decrypt": print('decrypt')
+        case "-k" | "-keymatrix": print('keymatrix')
+        case "-f" | "-format": print('format')
+        case _: print("unknown argument")
+
+    return 
 
 if __name__ == "__main__": main()
