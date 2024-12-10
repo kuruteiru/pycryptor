@@ -5,12 +5,24 @@ import random
 import sys
 
 BIT_LENGTH = 512
-BLOCK_SIZE = 5
+BLOCK_SIZE = 4
 ASCII_BITS = 8 
 
 def main():
     if len(sys.argv) == 1:
         app = qtw.QApplication(sys.argv)
+
+        stylesheet_path = "../stylesheet"
+        try: 
+            with open(stylesheet_path, "r") as stylesheet:
+                app.setStyleSheet(stylesheet.read())
+        except FileNotFoundError:
+            print("the stylesheet file does not exist")
+        except IOError:
+            print("an error occurred while reading stylesheet file")
+        except:
+            print("stylesheet error")
+
         window = App()
         window.show()
         sys.exit(app.exec())
