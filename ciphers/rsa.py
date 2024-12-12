@@ -6,7 +6,7 @@ import sys
 
 BIT_LENGTH = 512
 BLOCK_SIZE = 4
-ASCII_BITS = 8 
+ASCII_BITS = 8
 
 def main():
     if len(sys.argv) == 1:
