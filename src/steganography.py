@@ -192,7 +192,7 @@ class App(qtw.QMainWindow):
             self, 
             "select image", 
             "", 
-            "image files (*.png *.bmp)"
+            "image files (*.png *.jpg *.jpeg *.bmp)"
         )
 
         if not file_path: return
@@ -222,7 +222,7 @@ class App(qtw.QMainWindow):
             self, 
             "save steganography image", 
             "", 
-            "png files (*.png)"
+            "image files (*.png *.jpg *.jpeg *.bmp)"
         )
         if file_path:
             self.output_path_field.setText(file_path)
