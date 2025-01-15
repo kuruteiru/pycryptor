@@ -6,6 +6,8 @@ import rsa
 import sys
 import os
 
+# sys.set_int_max_str_digits(100000)
+
 def main():
     if len(sys.argv) == 1:
         app = qtw.QApplication(sys.argv)
@@ -32,22 +34,30 @@ def main():
 def hash_file(file_path: str) -> str:
     hasher = sha3_512()
     with open(file_path, "rb") as file:
-        while chunk := file.read(4096): hasher.update(chunk)
-
+        while chunk := file.read(4096):
+            hasher.update(chunk)
     return hasher.hexdigest()
 
 def sign_file(file_path: str, private_key: tuple[int, int]) -> str:
     file_hash = hash_file(file_path)
-    numeric_hash = rsa.text_to_numeric(file_hash)
-    signature = rsa.encrypt(str(numeric_hash), private_key)
-    return base64.b64encode(str(signature).encode()).decode()
+    encrypted_blocks = rsa.encrypt(file_hash, private_key)
+    return base64.b64encode(str(encrypted_blocks).encode()).decode()
 
 def verify_signature(file_path: str, signature: str, public_key: tuple[int, int]) -> bool:
+    if signature.startswith('rsa_sha3-512 '):
+        signature = signature.split(' ')[1]
+
     file_hash = hash_file(file_path)
-    decoded_signature = base64.b64decode(signature).decode()
-    numeric_signature = eval(decoded_signature)
-    decrypted_hash = rsa.decrypt(numeric_signature, public_key)
-    return rsa.text_to_numeric(file_hash) == int(decrypted_hash)
+    padding = len(signature) % 4
+
+    if padding != 0: 
+        signature += '=' * (4 - padding)
+    
+    decoded_str = base64.b64decode(signature).decode()
+    encrypted_blocks = eval(decoded_str)
+    decrypted_hash = rsa.decrypt(encrypted_blocks, public_key)
+
+    return decrypted_hash == file_hash
 
 def save_keys(public_key: tuple[int, int], private_key: tuple[int, int], save_dir: str) -> None:
     public_key_path = os.path.join(save_dir, "key.pub")
@@ -197,9 +207,11 @@ class App(qtw.QMainWindow):
             if not sign_path or not key_path: return
             
             with open(sign_path, "r") as sign_file:
-                signature = sign_file.read()
+                content = sign_file.read().strip()
+                signature = content.split(' ')[1]
 
             public_key = load_key(key_path)
+            
             if verify_signature(self.file_path, signature, public_key):
                 self.status_label.setText("signature valid")
             else:
